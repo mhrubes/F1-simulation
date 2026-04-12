@@ -3,10 +3,22 @@
 import { useEffect, useRef } from "react";
 import { getTrack } from "@/data/tracks";
 import { integrateDrivers } from "@/lib/racePhysics";
+import { runFrameLoop } from "@/lib/runFrameLoop";
 import { ensureLapSpeedFactors } from "@/lib/trackLapFactors";
 import { useRaceStore } from "@/store/raceStore";
 
-/** Herní smyčka při fázi racing */
+/** Horní mez jednoho fyzikálního kroku (stejné chování jako dřív u rAF). */
+const WALL_CHUNK_MS = 50;
+/**
+ * Max. fyzikálních kroků za jedno volání (ochrana UI).
+ * Při aktivní záložce je typicky Δt ~16 ms → vždy 1 řez; víc řezů jen po zadrhání rAF.
+ */
+const MAX_SLICES_VISIBLE = 12;
+const MAX_SLICES_HIDDEN = 48;
+/** Po dlouhé nečinnosti (např. první frame) nezpracovat najednou celé minuty. */
+const MAX_WALL_BANK_MS = 10_000;
+
+/** Herní smyčka při fázi racing — běží i na skryté záložce (setTimeout fallback). */
 export function useRaceLoop() {
   const trackId = useRaceStore((s) => s.trackId);
   const totalLaps = useRaceStore((s) => s.totalLaps);
@@ -15,7 +27,8 @@ export function useRaceLoop() {
   const setPhase = useRaceStore((s) => s.setPhase);
   const setRaceTimes = useRaceStore((s) => s.setRaceTimes);
   const setRaceResultDurationMs = useRaceStore((s) => s.setRaceResultDurationMs);
-  const lastRef = useRef<number | null>(null);
+  const lastWallRef = useRef<number | null>(null);
+  const wallBankRef = useRef(0);
   const simRaceMsRef = useRef(0);
 
   useEffect(() => {
@@ -26,42 +39,79 @@ export function useRaceLoop() {
 
   useEffect(() => {
     if (phase !== "racing" || !trackId) {
-      lastRef.current = null;
+      lastWallRef.current = null;
+      wallBankRef.current = 0;
       return;
     }
     const track = getTrack(trackId);
     if (!track) return;
 
     simRaceMsRef.current = 0;
-    let frame = 0;
-    const step = (t: number) => {
-      if (lastRef.current == null) lastRef.current = t;
-      const dtWall = t - lastRef.current;
-      lastRef.current = t;
-      const st = useRaceStore.getState();
-      const scale = st.raceTimeScale;
-      const dtWallCapped = Math.min(Math.max(0, dtWall), 50);
-      simRaceMsRef.current += dtWallCapped * scale;
-      const dtSeconds = (dtWallCapped / 1000) * scale;
-      const { drivers: next, allFinished } = integrateDrivers(
-        useRaceStore.getState().drivers,
-        track,
-        dtSeconds,
-        totalLaps,
-        t,
-      );
-      setDrivers(next);
-      if (allFinished) {
-        const started = useRaceStore.getState().raceStartedAt;
-        setRaceResultDurationMs(simRaceMsRef.current);
-        setRaceTimes(started, performance.now());
-        setPhase("finished");
-        lastRef.current = null;
-        return;
-      }
-      frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [phase, trackId, totalLaps, setDrivers, setPhase, setRaceTimes, setRaceResultDurationMs]);
+    lastWallRef.current = null;
+    wallBankRef.current = 0;
+
+    const stopLoop = runFrameLoop(
+      () => {
+        if (useRaceStore.getState().phase !== "racing") return false;
+        const wallNow = performance.now();
+        if (lastWallRef.current == null) {
+          lastWallRef.current = wallNow;
+          return;
+        }
+        let delta = wallNow - lastWallRef.current;
+        lastWallRef.current = wallNow;
+        if (delta > MAX_WALL_BANK_MS) delta = MAX_WALL_BANK_MS;
+        wallBankRef.current += delta;
+
+        const tabVisible =
+          typeof document === "undefined" ||
+          document.visibilityState !== "hidden";
+        const maxSlices = tabVisible ? MAX_SLICES_VISIBLE : MAX_SLICES_HIDDEN;
+
+        const st0 = useRaceStore.getState();
+        let slices = 0;
+        let drivers = st0.drivers;
+        const scale = st0.raceTimeScale;
+
+        while (wallBankRef.current > 0 && slices < maxSlices) {
+          const chunkMs = Math.min(wallBankRef.current, WALL_CHUNK_MS);
+          wallBankRef.current -= chunkMs;
+          slices++;
+          simRaceMsRef.current += chunkMs * scale;
+          const dtSeconds = (chunkMs / 1000) * scale;
+          const { drivers: next, allFinished } = integrateDrivers(
+            drivers,
+            track,
+            dtSeconds,
+            totalLaps,
+            performance.now(),
+          );
+          drivers = next;
+          if (allFinished) {
+            const started = useRaceStore.getState().raceStartedAt;
+            setRaceResultDurationMs(simRaceMsRef.current);
+            setRaceTimes(started, performance.now());
+            setPhase("finished");
+            lastWallRef.current = null;
+            wallBankRef.current = 0;
+            setDrivers(drivers);
+            return false;
+          }
+        }
+
+        setDrivers(drivers);
+      },
+      { hiddenIntervalMs: 100 },
+    );
+
+    return stopLoop;
+  }, [
+    phase,
+    trackId,
+    totalLaps,
+    setDrivers,
+    setPhase,
+    setRaceTimes,
+    setRaceResultDurationMs,
+  ]);
 }

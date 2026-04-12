@@ -7,6 +7,7 @@ import { getTrack } from "@/data/tracks";
 import { useRaceLoop } from "@/hooks/useRaceLoop";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/cn";
+import { runFrameLoop } from "@/lib/runFrameLoop";
 import { sortLive, sortStatic } from "@/lib/racePhysics";
 import type { RaceDriverState } from "@/lib/types";
 import { useRaceStore } from "@/store/raceStore";
@@ -125,14 +126,11 @@ export function RaceScreen() {
     finishedRef.current = true;
     queueMicrotask(() => setResultsOpen(true));
     const start = performance.now();
-    let fr = 0;
-    const step = (now: number) => {
-      const u = Math.min(1, (now - start) / 900);
+    return runFrameLoop(() => {
+      const u = Math.min(1, (performance.now() - start) / 900);
       setPitBlend(u);
-      if (u < 1) fr = requestAnimationFrame(step);
-    };
-    fr = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(fr);
+      if (u >= 1) return false;
+    });
   }, [phase]);
 
   const onLightsDone = useCallback(() => {

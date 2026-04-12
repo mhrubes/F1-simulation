@@ -6,6 +6,7 @@ import { getTrack, TRACKS } from "@/data/tracks";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLapTime } from "@/i18n/messages";
 import { useRaceStore } from "@/store/raceStore";
+import { runFrameLoop } from "@/lib/runFrameLoop";
 import { SetupConfirmDialog } from "./SetupConfirmDialog";
 import { TrackCircuit } from "./TrackCircuit";
 
@@ -27,17 +28,14 @@ export function HomeClient() {
       return;
     }
     let p = 0;
-    let frame = 0;
     let last = performance.now();
-    const step = (now: number) => {
+    return runFrameLoop(() => {
+      const now = performance.now();
       const dt = (now - last) / 1000;
       last = now;
       p = (p + (1 / track.lapTimeSeconds) * track.previewSpeedFactor * dt) % 1;
       setPreviewP(p);
-      frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
+    });
   }, [track]);
 
   const canContinue = Boolean(trackId) && laps >= 1 && drivers >= 1 && drivers <= 20;
