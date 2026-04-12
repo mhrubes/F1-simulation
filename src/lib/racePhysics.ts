@@ -6,14 +6,17 @@ function microNoise(t: number, id: number): number {
   return 0.97 + 0.06 * Math.sin(t * 0.003 + id * 1.7);
 }
 
+/**
+ * @param dtSeconds krok simulace v sekundách (typicky (min(Δt_wall,50ms)/1000) × násobič rychlosti).
+ */
 export function integrateDrivers(
   drivers: RaceDriverState[],
   track: TrackDef,
-  dtMs: number,
+  dtSeconds: number,
   totalLaps: number,
   now: number,
 ): { drivers: RaceDriverState[]; allFinished: boolean } {
-  const dt = Math.min(dtMs, 50) / 1000;
+  const dt = Math.max(0, Math.min(dtSeconds, 0.25));
   const lapFactors = ensureLapSpeedFactors(track.pathD);
 
   const next = drivers.map((d) => {

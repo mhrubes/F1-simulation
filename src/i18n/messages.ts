@@ -66,6 +66,9 @@ const cs: MessageDict = {
   "race.prevPage": "Předchozí stránka",
   "race.nextPage": "Další stránka",
   "race.listHidden": "Seznam je sbalený.",
+  "race.timeScale": "Rychlost času",
+  "race.timeScaleTooltip":
+    "Zrychlí jen plynutí závodu (1×–5×, ne zobrazené km/h). Výsledky ukazují skutečnou délku závodu.",
   "results.title": "Výsledky závodu",
   "results.duration": "Délka závodu",
   "results.close": "Zavřít",
@@ -141,6 +144,9 @@ const en: MessageDict = {
   "race.prevPage": "Previous page",
   "race.nextPage": "Next page",
   "race.listHidden": "The list is collapsed.",
+  "race.timeScale": "Time speed",
+  "race.timeScaleTooltip":
+    "Speeds up the race clock only (1×–5×, not the km/h readout). Results show the true race duration.",
   "results.title": "Race results",
   "results.duration": "Race duration",
   "results.close": "Close",
@@ -216,6 +222,9 @@ const sk: MessageDict = {
   "race.prevPage": "Predchádzajúca stránka",
   "race.nextPage": "Ďalšia stránka",
   "race.listHidden": "Zoznam je zbalený.",
+  "race.timeScale": "Rýchlosť času",
+  "race.timeScaleTooltip":
+    "Zrýchli len plynutie pretekov (1×–5×, nie km/h). Výsledky ukážu skutočnú dĺžku pretekov.",
   "results.title": "Výsledky pretekov",
   "results.duration": "Dĺžka pretekov",
   "results.close": "Zavrieť",

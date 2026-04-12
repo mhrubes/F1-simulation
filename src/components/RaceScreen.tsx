@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getTrack } from "@/data/tracks";
 import { useRaceLoop } from "@/hooks/useRaceLoop";
 import { useI18n } from "@/i18n/I18nProvider";
+import { cn } from "@/lib/cn";
 import { sortLive, sortStatic } from "@/lib/racePhysics";
 import { useRaceStore } from "@/store/raceStore";
 import { ResultsModal } from "./ResultsModal";
@@ -33,8 +34,9 @@ export function RaceScreen() {
   const setRaceTimes = useRaceStore((s) => s.setRaceTimes);
   const hoveredDriverId = useRaceStore((s) => s.hoveredDriverId);
   const setHoveredDriverId = useRaceStore((s) => s.setHoveredDriverId);
-  const raceStartedAt = useRaceStore((s) => s.raceStartedAt);
-  const raceEndedAt = useRaceStore((s) => s.raceEndedAt);
+  const raceTimeScale = useRaceStore((s) => s.raceTimeScale);
+  const setRaceTimeScale = useRaceStore((s) => s.setRaceTimeScale);
+  const raceResultDurationMs = useRaceStore((s) => s.raceResultDurationMs);
 
   const [tab, setTab] = useState<"static" | "live">("static");
   const [lightsOpen, setLightsOpen] = useState(false);
@@ -110,8 +112,7 @@ export function RaceScreen() {
     setRaceTimes(performance.now(), null);
   }, [setPhase, setRaceTimes]);
 
-  const durationMs =
-    raceStartedAt != null && raceEndedAt != null ? raceEndedAt - raceStartedAt : null;
+  const durationMs = phase === "finished" ? raceResultDurationMs : null;
 
   const top5 = useMemo(() => sortLive(drivers).slice(0, 5), [drivers]);
 
@@ -119,15 +120,51 @@ export function RaceScreen() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">{t(track.nameKey)}</h1>
-          <p className="text-sm text-zinc-400">
-            {t("race.lapCounter")}:{" "}
-            <span className="font-mono text-zinc-100">
-              {leaderLapDisplay}/{totalLaps}
-            </span>
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">{t(track.nameKey)}</h1>
+            <p className="text-sm text-zinc-400">
+              {t("race.lapCounter")}:{" "}
+              <span className="font-mono text-zinc-100">
+                {leaderLapDisplay}/{totalLaps}
+              </span>
+            </p>
+          </div>
+          {phase === "racing" ? (
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    {t("race.timeScale")}
+                  </span>
+                  <div className="flex gap-0.5" role="group" aria-label={t("race.timeScale")}>
+                    {([1, 2, 3, 5] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setRaceTimeScale(s)}
+                        className={cn(
+                          "min-w-[2.75rem] rounded-md px-2.5 py-1 text-sm font-semibold tabular-nums transition",
+                          raceTimeScale === s
+                            ? "bg-red-600 text-white"
+                            : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white",
+                        )}
+                      >
+                        {s}×
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </Tooltip.Trigger>
+              <Tooltip.Content
+                side="bottom"
+                className="z-30 max-w-[min(90vw,280px)] rounded-md border border-white/10 bg-zinc-950 px-2 py-1.5 text-xs leading-snug text-zinc-200 shadow-lg"
+              >
+                {t("race.timeScaleTooltip")}
+              </Tooltip.Content>
+            </Tooltip.Root>
+          ) : null}
         </div>
         <Tooltip.Root>
           <Tooltip.Trigger asChild>

@@ -4,6 +4,8 @@ import { create } from "zustand";
 import { pickRandomDrivers, uniqueCarNumbers } from "@/data/drivers";
 import type { RaceDriverState, RacePhase } from "@/lib/types";
 
+export type RaceTimeScale = 1 | 2 | 3 | 5;
+
 export type RaceStoreState = {
   trackId: string | null;
   totalLaps: number;
@@ -11,6 +13,10 @@ export type RaceStoreState = {
   phase: RacePhase;
   raceStartedAt: number | null;
   raceEndedAt: number | null;
+  /** Násobič plynutí simulace během závodu (1×–5×); neovlivní km/h jako „rychlost auta“. */
+  raceTimeScale: RaceTimeScale;
+  /** Délka závodu pro výsledky (ms), doplní se v cíli: Σ min(Δt_wall,50 ms)×násobič — odpovídá 1× „závodnímu“ času. */
+  raceResultDurationMs: number | null;
   hoveredDriverId: string | null;
   /** 0–1 vizuální posun do depa po závodě */
   pitAnimation: number;
@@ -20,6 +26,8 @@ type RaceStoreActions = {
   initFromSetup: (input: { trackId: string; totalLaps: number; driverCount: number }) => void;
   reset: () => void;
   setPhase: (p: RacePhase) => void;
+  setRaceTimeScale: (scale: RaceTimeScale) => void;
+  setRaceResultDurationMs: (ms: number | null) => void;
   setHoveredDriverId: (id: string | null) => void;
   setDrivers: (d: RaceDriverState[]) => void;
   setRaceTimes: (startedAt: number | null, endedAt: number | null) => void;
@@ -33,6 +41,8 @@ const initial: RaceStoreState = {
   phase: "idle",
   raceStartedAt: null,
   raceEndedAt: null,
+  raceTimeScale: 1,
+  raceResultDurationMs: null,
   hoveredDriverId: null,
   pitAnimation: 0,
 };
@@ -62,14 +72,23 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
       phase: "idle",
       raceStartedAt: null,
       raceEndedAt: null,
+      raceTimeScale: 1,
+      raceResultDurationMs: null,
       hoveredDriverId: null,
       pitAnimation: 0,
     });
   },
   reset: () => set({ ...initial }),
   setPhase: (phase) => set({ phase }),
+  setRaceTimeScale: (raceTimeScale) => set({ raceTimeScale }),
+  setRaceResultDurationMs: (raceResultDurationMs) => set({ raceResultDurationMs }),
   setHoveredDriverId: (hoveredDriverId) => set({ hoveredDriverId }),
   setDrivers: (drivers) => set({ drivers }),
-  setRaceTimes: (raceStartedAt, raceEndedAt) => set({ raceStartedAt, raceEndedAt }),
+  setRaceTimes: (raceStartedAt, raceEndedAt) =>
+    set((s) => ({
+      raceStartedAt,
+      raceEndedAt,
+      ...(raceStartedAt != null && raceEndedAt == null ? { raceResultDurationMs: null } : {}),
+    })),
   setPitAnimation: (pitAnimation) => set({ pitAnimation }),
 }));
