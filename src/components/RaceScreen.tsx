@@ -54,6 +54,8 @@ export function RaceScreen() {
   const setRaceTimes = useRaceStore((s) => s.setRaceTimes);
   const hoveredDriverId = useRaceStore((s) => s.hoveredDriverId);
   const setHoveredDriverId = useRaceStore((s) => s.setHoveredDriverId);
+  const trackedDriverIds = useRaceStore((s) => s.trackedDriverIds);
+  const toggleTrackedDriver = useRaceStore((s) => s.toggleTrackedDriver);
   const raceTimeScale = useRaceStore((s) => s.raceTimeScale);
   const setRaceTimeScale = useRaceStore((s) => s.setRaceTimeScale);
   const raceResultDurationMs = useRaceStore((s) => s.raceResultDurationMs);
@@ -66,8 +68,26 @@ export function RaceScreen() {
   const [pageIndex, setPageIndex] = useState(0);
   const [listCollapsed, setListCollapsed] = useState(false);
   const finishedRef = useRef(false);
+  const prevDisqualifiedSig = useRef("");
 
   useRaceLoop();
+
+  /** Po diskvalifikaci (Q) odebrat jezdce ze sledování na trati. */
+  useEffect(() => {
+    const sig = drivers
+      .filter((d) => d.disqualified)
+      .map((d) => d.driverId)
+      .sort()
+      .join("|");
+    if (sig === prevDisqualifiedSig.current) return;
+    prevDisqualifiedSig.current = sig;
+    const dq = new Set(sig ? sig.split("|") : []);
+    useRaceStore.setState((s) => {
+      const next = s.trackedDriverIds.filter((id) => !dq.has(id));
+      if (next.length === s.trackedDriverIds.length) return {};
+      return { trackedDriverIds: next };
+    });
+  }, [drivers]);
 
   const track = useMemo(() => getTrack(trackId ?? null), [trackId]);
 
@@ -146,7 +166,7 @@ export function RaceScreen() {
   if (!track) return null;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex w-full max-w-[min(1680px,calc(100vw-2rem))] flex-col gap-6 px-3 py-8 sm:px-5 md:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div>
@@ -325,6 +345,9 @@ export function RaceScreen() {
                 phase={phase}
                 hoveredDriverId={hoveredDriverId}
                 setHoveredDriverId={setHoveredDriverId}
+                followOnTrackEnabled={canSwitchLists}
+                trackedDriverIds={trackedDriverIds}
+                toggleTrackedDriver={toggleTrackedDriver}
                 racePosById={racePosById}
                 t={t}
               />
@@ -338,6 +361,9 @@ export function RaceScreen() {
                 phase={phase}
                 hoveredDriverId={hoveredDriverId}
                 setHoveredDriverId={setHoveredDriverId}
+                followOnTrackEnabled={canSwitchLists}
+                trackedDriverIds={trackedDriverIds}
+                toggleTrackedDriver={toggleTrackedDriver}
                 racePosById={racePosById}
                 t={t}
               />
@@ -364,7 +390,7 @@ export function RaceScreen() {
         </div>
       ) : null}
 
-      <div className="space-y-2">
+      <div className="w-full space-y-2">
         {phase === "finished" ? (
           <div className="flex justify-end text-sm">
             <span className="text-amber-300">{t("race.finished")}</span>
@@ -372,9 +398,10 @@ export function RaceScreen() {
         ) : null}
         <TrackCircuit
           track={track}
-          className="aspect-[1000/650] w-full max-h-[520px]"
+          className="aspect-[1000/650] w-full max-h-[min(68vh,720px)] [&>svg]:origin-center [&>svg]:scale-[1.03] motion-reduce:[&>svg]:scale-100"
           drivers={drivers.filter((d) => !d.disqualified)}
           hoveredDriverId={hoveredDriverId}
+          trackedDriverIds={trackedDriverIds}
           phase={phase}
           pitBlend={pitBlend}
         />
@@ -404,6 +431,10 @@ function LeaderTable(props: {
   phase: string;
   hoveredDriverId: string | null;
   setHoveredDriverId: (id: string | null) => void;
+  /** Sloupec se zaškrtávkou u startovního roště (závod / cíl). */
+  followOnTrackEnabled?: boolean;
+  trackedDriverIds?: string[];
+  toggleTrackedDriver?: (id: string) => void;
   racePosById: Map<string, number>;
   t: (k: string) => string;
 }) {
@@ -415,33 +446,89 @@ function LeaderTable(props: {
     phase,
     hoveredDriverId,
     setHoveredDriverId,
+    followOnTrackEnabled = false,
+    trackedDriverIds = [],
+    toggleTrackedDriver,
     racePosById,
     t,
   } = props;
 
+  /**
+   * Jezdec + stáj: `minmax(..., fr)` — hlavička sedí nad sloupci bez zbytečné díry, stáj má min. šířku.
+   * Live má stejné pořadí sloupců jako rošt: jezdec → stáj → Ø km/h → kola.
+   */
+  /** Live: stejné pořadí textových sloupců jako startovní rošt — jezdec, stáj, Ø km/h, kola. */
   const headerLive =
-    "grid grid-cols-[48px_56px_minmax(0,1fr)_96px_minmax(0,1fr)_88px] items-center gap-2 border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400";
+    "grid grid-cols-[48px_56px_minmax(10.5rem,1.15fr)_minmax(11rem,1.25fr)_5.5rem_88px] items-center gap-x-3 gap-y-1 border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400";
+  const headerLiveFollow =
+    "grid grid-cols-[48px_56px_minmax(10.5rem,1.15fr)_minmax(11rem,1.25fr)_5.5rem_88px_minmax(5.5rem,6.5rem)] items-center gap-x-3 gap-y-1 border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400";
   const headerStatic =
-    "grid grid-cols-[52px_56px_minmax(0,1fr)_minmax(0,1fr)_96px_64px_88px] items-center gap-2 border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400";
+    "grid grid-cols-[52px_56px_minmax(10.5rem,1.1fr)_minmax(11rem,1.2fr)_5.5rem_64px_88px] items-center gap-x-3 gap-y-1 border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400";
+  const headerStaticFollow =
+    "grid grid-cols-[52px_56px_minmax(10.5rem,1.1fr)_minmax(11rem,1.2fr)_5.5rem_64px_88px_minmax(5.5rem,6.5rem)] items-center gap-x-3 gap-y-1 border-b border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400";
   const rowLive =
-    "grid grid-cols-[48px_56px_minmax(0,1fr)_96px_minmax(0,1fr)_88px] items-center gap-2 px-3 py-2 hover:bg-white/[0.03]";
+    "grid grid-cols-[48px_56px_minmax(10.5rem,1.15fr)_minmax(11rem,1.25fr)_5.5rem_88px] items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-white/[0.03]";
+  const rowLiveFollow =
+    "grid grid-cols-[48px_56px_minmax(10.5rem,1.15fr)_minmax(11rem,1.25fr)_5.5rem_88px_minmax(5.5rem,6.5rem)] items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-white/[0.03]";
   const rowStatic =
-    "grid grid-cols-[52px_56px_minmax(0,1fr)_minmax(0,1fr)_96px_64px_88px] items-center gap-2 px-3 py-2 hover:bg-white/[0.03]";
+    "grid grid-cols-[52px_56px_minmax(10.5rem,1.1fr)_minmax(11rem,1.2fr)_5.5rem_64px_88px] items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-white/[0.03]";
+  const rowStaticFollow =
+    "grid grid-cols-[52px_56px_minmax(10.5rem,1.1fr)_minmax(11rem,1.2fr)_5.5rem_64px_88px_minmax(5.5rem,6.5rem)] items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-white/[0.03]";
   const rowLiveHi =
-    "grid grid-cols-[48px_56px_minmax(0,1fr)_96px_minmax(0,1fr)_88px] items-center gap-2 bg-orange-500/10 px-3 py-2";
+    "grid grid-cols-[48px_56px_minmax(10.5rem,1.15fr)_minmax(11rem,1.25fr)_5.5rem_88px] items-center gap-x-3 gap-y-1 bg-orange-500/10 px-3 py-2";
+  const rowLiveFollowHi =
+    "grid grid-cols-[48px_56px_minmax(10.5rem,1.15fr)_minmax(11rem,1.25fr)_5.5rem_88px_minmax(5.5rem,6.5rem)] items-center gap-x-3 gap-y-1 bg-orange-500/10 px-3 py-2";
   const rowStaticHi =
-    "grid grid-cols-[52px_56px_minmax(0,1fr)_minmax(0,1fr)_96px_64px_88px] items-center gap-2 bg-orange-500/10 px-3 py-2";
+    "grid grid-cols-[52px_56px_minmax(10.5rem,1.1fr)_minmax(11rem,1.2fr)_5.5rem_64px_88px] items-center gap-x-3 gap-y-1 bg-orange-500/10 px-3 py-2";
+  const rowStaticFollowHi =
+    "grid grid-cols-[52px_56px_minmax(10.5rem,1.1fr)_minmax(11rem,1.2fr)_5.5rem_64px_88px_minmax(5.5rem,6.5rem)] items-center gap-x-3 gap-y-1 bg-orange-500/10 px-3 py-2";
+
+  const showTrackingCol = followOnTrackEnabled;
+  const staticFollow = mode === "static" && showTrackingCol;
+  const liveFollow = mode === "live" && showTrackingCol;
+
+  const trackingHeader = (
+    <span
+      className="whitespace-nowrap text-center leading-tight"
+      title={t("race.followCheckbox")}
+    >
+      {t("race.colTracking")}
+    </span>
+  );
 
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-black/25">
       {mode === "live" ? (
-        <div className={headerLive}>
-          <span>{t("race.colPos")}</span>
+        liveFollow ? (
+          <div className={headerLiveFollow}>
+            <span>{t("race.colPos")}</span>
+            <span>{t("race.colNo")}</span>
+            <span>{t("race.colDriver")}</span>
+            <span>{t("race.colTeam")}</span>
+            <span className="text-right">{t("race.colAvg")}</span>
+            <span className="text-right">{t("race.colLaps")}</span>
+            {trackingHeader}
+          </div>
+        ) : (
+          <div className={headerLive}>
+            <span>{t("race.colPos")}</span>
+            <span>{t("race.colNo")}</span>
+            <span>{t("race.colDriver")}</span>
+            <span>{t("race.colTeam")}</span>
+            <span className="text-right">{t("race.colAvg")}</span>
+            <span className="text-right">{t("race.colLaps")}</span>
+          </div>
+        )
+      ) : staticFollow ? (
+        <div className={headerStaticFollow}>
+          <span>{t("race.colRoof")}</span>
           <span>{t("race.colNo")}</span>
           <span>{t("race.colDriver")}</span>
-          <span className="text-right">{t("race.colAvg")}</span>
           <span>{t("race.colTeam")}</span>
+          <span className="text-right">{t("race.colAvg")}</span>
+          <span className="text-right">{t("race.colRacePos")}</span>
           <span className="text-right">{t("race.colLaps")}</span>
+          {trackingHeader}
         </div>
       ) : (
         <div className={headerStatic}>
@@ -458,8 +545,18 @@ function LeaderTable(props: {
         {rows.map((d, idx) => {
           const lapsShown = Math.min(totalLaps, Math.floor(d.completedLaps + d.lapProgress));
           const activeHover = phase === "racing" || phase === "finished";
-          const hi = activeHover && hoveredDriverId === d.driverId;
-          const rowClass = mode === "live" ? (hi ? rowLiveHi : rowLive) : hi ? rowStaticHi : rowStatic;
+          const tracked = trackedDriverIds.includes(d.driverId);
+          const hi =
+            activeHover &&
+            (hoveredDriverId === d.driverId || tracked);
+          let rowClass: string;
+          if (mode === "live") {
+            rowClass = liveFollow ? (hi ? rowLiveFollowHi : rowLiveFollow) : hi ? rowLiveHi : rowLive;
+          } else if (staticFollow) {
+            rowClass = hi ? rowStaticFollowHi : rowStaticFollow;
+          } else {
+            rowClass = hi ? rowStaticHi : rowStatic;
+          }
           const livePos =
             mode === "live" ? rowOffset + idx + 1 : d.internalIndex;
           const racePos = racePosById.get(d.driverId) ?? "—";
@@ -474,13 +571,13 @@ function LeaderTable(props: {
               <div className="flex items-center">
                 <Badge n={d.carNumber} />
               </div>
-              <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
-                <span>
+              <div className="min-w-0 self-center text-sm font-medium leading-snug text-zinc-100">
+                <span className="break-words [overflow-wrap:anywhere]">
                   {d.firstName} {d.lastName}
                 </span>
                 {d.disqualified ? (
                   <span
-                    className="rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-300"
+                    className="ml-1 inline-block align-middle rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-300"
                     title={t("race.disqualified")}
                   >
                     {t("race.statusQ")}
@@ -489,17 +586,21 @@ function LeaderTable(props: {
               </div>
               {mode === "live" ? (
                 <>
+                  <div className="min-w-0 self-center text-sm leading-snug text-zinc-400 break-words [overflow-wrap:anywhere]">
+                    {t(d.teamKey)}
+                  </div>
                   <div className="flex items-center justify-end font-mono text-sm text-zinc-300">
                     {Math.round(d.displayAvgKmh || 0)}
                   </div>
-                  <div className="flex items-center truncate text-sm text-zinc-400">{t(d.teamKey)}</div>
                   <div className="flex items-center justify-end font-mono text-sm text-zinc-300">
                     {lapsShown}/{totalLaps}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center truncate text-sm text-zinc-400">{t(d.teamKey)}</div>
+                  <div className="min-w-0 self-center text-sm leading-snug text-zinc-400 break-words [overflow-wrap:anywhere]">
+                    {t(d.teamKey)}
+                  </div>
                   <div className="flex items-center justify-end font-mono text-sm text-zinc-300">
                     {Math.round(d.displayAvgKmh || 0)}
                   </div>
@@ -511,6 +612,23 @@ function LeaderTable(props: {
                   </div>
                 </>
               )}
+              {staticFollow || liveFollow ? (
+                <div
+                  className="flex items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 cursor-pointer rounded border-white/20 bg-black/40 text-orange-500 focus:ring-orange-500/60 disabled:cursor-not-allowed disabled:opacity-25"
+                    checked={tracked}
+                    disabled={d.disqualified}
+                    onChange={() => toggleTrackedDriver?.(d.driverId)}
+                    aria-label={t("race.followCheckbox")}
+                    title={t("race.followCheckbox")}
+                  />
+                </div>
+              ) : null}
             </div>
           );
         })}

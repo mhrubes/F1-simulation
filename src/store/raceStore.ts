@@ -18,6 +18,8 @@ export type RaceStoreState = {
   /** Délka závodu pro výsledky (ms), doplní se v cíli: Σ min(Δt_wall,50 ms)×násobič — odpovídá 1× „závodnímu“ času. */
   raceResultDurationMs: number | null;
   hoveredDriverId: string | null;
+  /** Jezdci zvolení u startovního roště — zvýraznění na trati (více najednou). */
+  trackedDriverIds: string[];
   /** 0–1 vizuální posun do depa po závodě */
   pitAnimation: number;
 };
@@ -29,6 +31,7 @@ type RaceStoreActions = {
   setRaceTimeScale: (scale: RaceTimeScale) => void;
   setRaceResultDurationMs: (ms: number | null) => void;
   setHoveredDriverId: (id: string | null) => void;
+  toggleTrackedDriver: (driverId: string) => void;
   setDrivers: (d: RaceDriverState[]) => void;
   setRaceTimes: (startedAt: number | null, endedAt: number | null) => void;
   setPitAnimation: (v: number) => void;
@@ -44,6 +47,7 @@ const initial: RaceStoreState = {
   raceTimeScale: 1,
   raceResultDurationMs: null,
   hoveredDriverId: null,
+  trackedDriverIds: [],
   pitAnimation: 0,
 };
 
@@ -79,6 +83,7 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
       raceTimeScale: 1,
       raceResultDurationMs: null,
       hoveredDriverId: null,
+      trackedDriverIds: [],
       pitAnimation: 0,
     });
   },
@@ -87,6 +92,16 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
   setRaceTimeScale: (raceTimeScale) => set({ raceTimeScale }),
   setRaceResultDurationMs: (raceResultDurationMs) => set({ raceResultDurationMs }),
   setHoveredDriverId: (hoveredDriverId) => set({ hoveredDriverId }),
+  toggleTrackedDriver: (driverId) =>
+    set((s) => {
+      const row = s.drivers.find((d) => d.driverId === driverId);
+      if (!row || row.disqualified) return {};
+      const cur = s.trackedDriverIds;
+      if (cur.includes(driverId)) {
+        return { trackedDriverIds: cur.filter((id) => id !== driverId) };
+      }
+      return { trackedDriverIds: [...cur, driverId] };
+    }),
   setDrivers: (drivers) => set({ drivers }),
   setRaceTimes: (raceStartedAt, raceEndedAt) =>
     set((s) => ({

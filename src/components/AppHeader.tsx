@@ -13,7 +13,7 @@ export function AppHeader() {
 
   return (
     <header className="border-b border-white/10 bg-black/40 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex w-full max-w-[min(1680px,calc(100vw-2rem))] items-center gap-3 px-3 py-3 sm:px-5 md:px-6">
         <div className="w-24 shrink-0" />
         <div className="flex flex-1 justify-center">
           <div className="rounded-full border border-white/10 bg-white/5 px-6 py-1.5 font-mono text-sm tracking-[0.2em] text-zinc-100 tabular-nums">

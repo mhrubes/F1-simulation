@@ -22,6 +22,9 @@ function tauOnTrack(d: RaceDriverState): number {
 
 const PIT_TAU = 0.86;
 
+/** Stabilní výchozí — `[]` v parametrech by se vytvářelo znovu každý render a rozbíjelo by závislosti. */
+const EMPTY_TRACKED_IDS: readonly string[] = [];
+
 type Pt = { x: number; y: number };
 
 type StartFinishGeom = {
@@ -71,6 +74,8 @@ export function TrackCircuit(props: {
   pitBlend?: number;
   drivers?: RaceDriverState[];
   hoveredDriverId?: string | null;
+  /** Zvýraznění na trati z tabulky startovního roště (více jezdců). */
+  trackedDriverIds?: readonly string[];
   phase?: "idle" | "lights" | "racing" | "finished";
   previewProgress?: number | null;
 }) {
@@ -85,6 +90,7 @@ export function TrackCircuit(props: {
     pitBlend = 0,
     drivers,
     hoveredDriverId,
+    trackedDriverIds = EMPTY_TRACKED_IDS,
     phase = "idle",
     previewProgress,
   } = props;
@@ -105,6 +111,7 @@ export function TrackCircuit(props: {
     }
     if (!drivers?.length) return [];
     const tableHoverActive = phase === "racing" || phase === "finished";
+    const tracked = new Set(trackedDriverIds);
     return drivers.map((d) => {
       const base = tauOnTrack(d);
       const s = base * (1 - pitBlend) + PIT_TAU * pitBlend;
@@ -112,12 +119,14 @@ export function TrackCircuit(props: {
         id: d.driverId,
         s,
         number: d.carNumber,
-        highlight: tableHoverActive && hoveredDriverId === d.driverId,
+        highlight:
+          tableHoverActive &&
+          (hoveredDriverId === d.driverId || tracked.has(d.driverId)),
         dim: phase === "finished",
         dqPending: Boolean(d.dqPending),
       };
     });
-  }, [drivers, hoveredDriverId, phase, pitBlend, previewProgress]);
+  }, [drivers, hoveredDriverId, trackedDriverIds, phase, pitBlend, previewProgress]);
 
   useLayoutEffect(() => {
     const el = pathRef.current;
@@ -137,14 +146,18 @@ export function TrackCircuit(props: {
   }, [markers, track.pathD]);
 
   const orderedPoints = useMemo(() => {
+    const active = phase === "racing" || phase === "finished";
+    const tracked = new Set(trackedDriverIds);
     const boost =
-      hoveredDriverId != null && (phase === "racing" || phase === "finished");
+      active && (hoveredDriverId != null || tracked.size > 0);
     if (!boost) return points;
-    const id = hoveredDriverId;
-    return [...points].sort(
-      (a, b) => (a.m.id === id ? 1 : 0) - (b.m.id === id ? 1 : 0),
-    );
-  }, [points, hoveredDriverId, phase]);
+    const rank = (id: string) => {
+      if (id === hoveredDriverId) return 2;
+      if (tracked.has(id)) return 1;
+      return 0;
+    };
+    return [...points].sort((a, b) => rank(a.m.id) - rank(b.m.id));
+  }, [points, hoveredDriverId, trackedDriverIds, phase]);
 
   return (
     <div
