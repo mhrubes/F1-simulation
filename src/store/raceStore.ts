@@ -68,6 +68,7 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
       completedLaps: 0,
       displayAvgKmh: 0,
       finished: false,
+      finishSimTimeMs: null,
       disqualified: false,
       dqPending: false,
       dqAfterProgress: null,

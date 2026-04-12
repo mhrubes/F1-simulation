@@ -20,6 +20,8 @@ export function integrateDrivers(
   dtSeconds: number,
   totalLaps: number,
   now: number,
+  /** Současný simulovaný čas závodu (ms) po tomto fyzikálním kroku — razítko cíle. */
+  simElapsedMs: number,
 ): { drivers: RaceDriverState[]; allFinished: boolean } {
   const dt = Math.max(0, Math.min(dtSeconds, 0.25));
   const lapFactors = ensureLapSpeedFactors(track.pathD);
@@ -68,11 +70,16 @@ export function integrateDrivers(
       completedLaps,
       displayAvgKmh,
       finished: done,
+      finishSimTimeMs: done
+        ? d.finishSimTimeMs != null
+          ? d.finishSimTimeMs
+          : simElapsedMs
+        : d.finishSimTimeMs,
     };
   });
 
   const withDq = applyBlueFlagDisqualification(next, totalLaps);
-  const finalDrivers = applySoleSurvivorFinish(withDq, totalLaps);
+  const finalDrivers = applySoleSurvivorFinish(withDq, totalLaps, simElapsedMs);
 
   const allFinished =
     finalDrivers.length > 0 &&
@@ -148,6 +155,7 @@ function applyBlueFlagDisqualification(
 function applySoleSurvivorFinish(
   drivers: RaceDriverState[],
   totalLaps: number,
+  simElapsedMs: number,
 ): RaceDriverState[] {
   const racing = drivers.filter(racingActive);
   if (racing.length !== 1) {
@@ -177,6 +185,7 @@ function applySoleSurvivorFinish(
         lapProgress: 0,
         completedLaps: snapLaps,
         soloFinishLine: null,
+        finishSimTimeMs: d.finishSimTimeMs ?? simElapsedMs,
       };
     }
 

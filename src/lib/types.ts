@@ -38,6 +38,8 @@ export interface RaceDriverState {
   /** exponenciální průměr km/h pro zobrazení */
   displayAvgKmh: number;
   finished: boolean;
+  /** Simulovaný čas závodu (ms, 1× herní čas) v okamžiku cíle; jen pro klasifikované v cíli. */
+  finishSimTimeMs: number | null;
   /** Modrá vlajka: po dojetí na S/F — závod ukončen, označení Q, bez jízdy dál */
   disqualified: boolean;
   /** Lídr má o ≥1 kolo víc; jezdec dojíždí k další čáře S/F, pak dostane Q */

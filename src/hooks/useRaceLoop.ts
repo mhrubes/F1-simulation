@@ -85,6 +85,7 @@ export function useRaceLoop() {
             dtSeconds,
             totalLaps,
             performance.now(),
+            simRaceMsRef.current,
           );
           drivers = next;
           if (allFinished) {

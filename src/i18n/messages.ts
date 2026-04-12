@@ -89,6 +89,7 @@ const cs: MessageDict = {
   "results.pos": "Poz.",
   "results.driver": "Jezdec",
   "results.team": "Stáj",
+  "results.gap": "Za lídrem",
   "units.sec": "s",
   "units.min": "min",
 };
@@ -180,6 +181,7 @@ const en: MessageDict = {
   "results.pos": "Pos.",
   "results.driver": "Driver",
   "results.team": "Team",
+  "results.gap": "Gap to leader",
   "units.sec": "s",
   "units.min": "min",
 };
@@ -271,6 +273,7 @@ const sk: MessageDict = {
   "results.pos": "Poz.",
   "results.driver": "Pretekár",
   "results.team": "Stajňa",
+  "results.gap": "Za lídrom",
   "units.sec": "s",
   "units.min": "min",
 };
