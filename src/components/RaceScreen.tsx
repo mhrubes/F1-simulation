@@ -351,7 +351,7 @@ export function RaceScreen() {
       {disqualified.length > 0 ? (
         <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-200/90">
-            {t("race.disqualified")}
+            {t("race.disqualified")} - {disqualified.length}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             {disqualified.map((d) => {

@@ -26,6 +26,7 @@ export function ResultsModal(props: {
   const { open, onOpenChange, top, durationMs, onReset } = props;
   const { t } = useI18n();
   const router = useRouter();
+  const classified = top.filter((d) => !d.disqualified);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -49,7 +50,7 @@ export function ResultsModal(props: {
                 </tr>
               </thead>
               <tbody>
-                {top.map((d, idx) => (
+                {classified.map((d, idx) => (
                   <tr key={d.driverId} className="border-t border-white/5 odd:bg-white/[0.02]">
                     <td className="px-3 py-2 font-mono">{idx + 1}</td>
                     <td className="px-3 py-2 font-medium">

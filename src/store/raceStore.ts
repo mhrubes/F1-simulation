@@ -65,6 +65,9 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
       displayAvgKmh: 0,
       finished: false,
       disqualified: false,
+      dqPending: false,
+      dqAfterProgress: null,
+      soloFinishLine: null,
     }));
     set({
       trackId,

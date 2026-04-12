@@ -11,6 +11,8 @@ type Marker = {
   number: number;
   highlight?: boolean;
   dim?: boolean;
+  /** Čeká na S/F před Q — blikající značka na trati */
+  dqPending?: boolean;
 };
 
 function tauOnTrack(d: RaceDriverState): number {
@@ -112,6 +114,7 @@ export function TrackCircuit(props: {
         number: d.carNumber,
         highlight: tableHoverActive && hoveredDriverId === d.driverId,
         dim: phase === "finished",
+        dqPending: Boolean(d.dqPending),
       };
     });
   }, [drivers, hoveredDriverId, phase, pitBlend, previewProgress]);
@@ -230,9 +233,28 @@ export function TrackCircuit(props: {
         ) : null}
         {orderedPoints.map(({ m, pt }) => {
           const r = m.highlight ? 16 : m.number === 0 ? 10 : 13;
-          const fill = m.highlight ? "#f97316" : m.dim ? "#57534e" : "#e11d48";
+          const fill = m.highlight
+            ? "#f97316"
+            : m.dim
+              ? "#57534e"
+              : m.dqPending
+                ? "#f59e0b"
+                : "#e11d48";
+          const blinkPending =
+            m.dqPending && !m.dim && (phase === "racing" || phase === "finished");
           return (
             <g key={m.id} filter={m.highlight ? `url(#${fid})` : undefined}>
+              {blinkPending ? (
+                <animate
+                  attributeName="opacity"
+                  values="1;0.28;1"
+                  keyTimes="0;0.5;1"
+                  dur="0.75s"
+                  repeatCount="indefinite"
+                  calcMode="spline"
+                  keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                />
+              ) : null}
               <circle
                 cx={pt.x}
                 cy={pt.y}
