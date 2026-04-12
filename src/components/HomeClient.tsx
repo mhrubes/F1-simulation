@@ -74,7 +74,7 @@ export function HomeClient() {
           <p className="text-center text-sm text-zinc-400">{t("home.previewHint")}</p>
           <TrackCircuit
             track={track}
-            className="aspect-[1000/650] w-full"
+            className="mx-auto aspect-[1000/650] w-full max-w-xs"
             previewProgress={previewP}
           />
           <p className="text-center text-xs text-zinc-400">
