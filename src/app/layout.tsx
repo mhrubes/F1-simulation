@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { Analytics } from "@vercel/analytics/next";
 import { AppHeader } from "@/components/AppHeader";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import "./globals.css";
@@ -36,6 +37,7 @@ export default function RootLayout({
             </div>
           </Tooltip.Provider>
         </I18nProvider>
+        <Analytics />
       </body>
     </html>
   );
