@@ -38,4 +38,6 @@ export interface RaceDriverState {
   /** exponenciální průměr km/h pro zobrazení */
   displayAvgKmh: number;
   finished: boolean;
+  /** Modrá vlajka: lídr ho obkroužil — závod ukončen, označení Q, bez jízdy dál */
+  disqualified: boolean;
 }

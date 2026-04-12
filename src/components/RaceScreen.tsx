@@ -8,6 +8,7 @@ import { useRaceLoop } from "@/hooks/useRaceLoop";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/cn";
 import { sortLive, sortStatic } from "@/lib/racePhysics";
+import type { RaceDriverState } from "@/lib/types";
 import { useRaceStore } from "@/store/raceStore";
 import { ResultsModal } from "./ResultsModal";
 import { TrackCircuit } from "./TrackCircuit";
@@ -20,6 +21,24 @@ function Badge({ n }: { n: number }) {
   return (
     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-zinc-100 ring-1 ring-white/10">
       {n}
+    </div>
+  );
+}
+
+/** Stejný vizuál jako kroužek auta na SVG trati (červená výplň, tmavý obrys). */
+function TrackStyleCarDisc({ n, title }: { n: number; title: string }) {
+  return (
+    <div title={title} className="relative flex h-[34px] w-[34px] shrink-0 items-center justify-center">
+      <div
+        className="absolute rounded-full bg-black/45"
+        style={{ width: 30, height: 30, left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
+      />
+      <div
+        className="relative flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#e11d48] text-[11px] font-extrabold leading-none text-zinc-950"
+        style={{ fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif" }}
+      >
+        {n}
+      </div>
     </div>
   );
 }
@@ -51,19 +70,29 @@ export function RaceScreen() {
 
   const track = useMemo(() => getTrack(trackId ?? null), [trackId]);
 
-  const live = useMemo(() => sortLive(drivers), [drivers]);
+  const liveRacing = useMemo(
+    () => sortLive(drivers.filter((d) => !d.disqualified)),
+    [drivers],
+  );
   const stat = useMemo(() => sortStatic(drivers), [drivers]);
+  const disqualified = useMemo(
+    () =>
+      [...drivers.filter((d) => d.disqualified)].sort(
+        (a, b) => a.internalIndex - b.internalIndex,
+      ),
+    [drivers],
+  );
   const racePosById = useMemo(() => {
     const m = new Map<string, number>();
-    live.forEach((d, i) => m.set(d.driverId, i + 1));
+    liveRacing.forEach((d, i) => m.set(d.driverId, i + 1));
     return m;
-  }, [live]);
+  }, [liveRacing]);
 
   const leaderLapDisplay = useMemo(() => {
-    const leader = live[0];
+    const leader = liveRacing[0];
     if (!leader) return 0;
     return Math.min(totalLaps, Math.floor(leader.completedLaps + leader.lapProgress));
-  }, [live, totalLaps]);
+  }, [liveRacing, totalLaps]);
 
   const canSwitchLists = phase === "racing" || phase === "finished";
 
@@ -76,8 +105,8 @@ export function RaceScreen() {
   }, [stat, rowOffset, pageSize]);
 
   const pagedLive = useMemo(() => {
-    return live.slice(rowOffset, rowOffset + pageSize);
-  }, [live, rowOffset, pageSize]);
+    return liveRacing.slice(rowOffset, rowOffset + pageSize);
+  }, [liveRacing, rowOffset, pageSize]);
 
   useEffect(() => {
     setPageIndex(0);
@@ -114,7 +143,7 @@ export function RaceScreen() {
 
   const durationMs = phase === "finished" ? raceResultDurationMs : null;
 
-  const top5 = useMemo(() => sortLive(drivers).slice(0, 5), [drivers]);
+  const top5 = useMemo(() => liveRacing.slice(0, 5), [liveRacing]);
 
   if (!track) return null;
 
@@ -319,6 +348,24 @@ export function RaceScreen() {
         )}
       </Tabs.Root>
 
+      {disqualified.length > 0 ? (
+        <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-200/90">
+            {t("race.disqualified")}
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            {disqualified.map((d) => {
+              const lapsShown = Math.min(
+                totalLaps,
+                Math.floor(d.completedLaps + d.lapProgress),
+              );
+              const title = `${d.firstName} ${d.lastName} — ${lapsShown}/${totalLaps} — ${t("race.statusQ")}`;
+              return <TrackStyleCarDisc key={d.driverId} n={d.carNumber} title={title} />;
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         {phase === "finished" ? (
           <div className="flex justify-end text-sm">
@@ -328,7 +375,7 @@ export function RaceScreen() {
         <TrackCircuit
           track={track}
           className="aspect-[1000/650] w-full max-h-[520px]"
-          drivers={drivers}
+          drivers={drivers.filter((d) => !d.disqualified)}
           hoveredDriverId={hoveredDriverId}
           phase={phase}
           pitBlend={pitBlend}
@@ -351,7 +398,7 @@ export function RaceScreen() {
 }
 
 function LeaderTable(props: {
-  rows: ReturnType<typeof sortLive>;
+  rows: RaceDriverState[];
   /** Posun řádků oproti celému seznamu (živá pozice v závodě). */
   rowOffset: number;
   mode: "live" | "static";
@@ -429,8 +476,18 @@ function LeaderTable(props: {
               <div className="flex items-center">
                 <Badge n={d.carNumber} />
               </div>
-              <div className="flex items-center text-sm font-medium text-zinc-100">
-                {d.firstName} {d.lastName}
+              <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
+                <span>
+                  {d.firstName} {d.lastName}
+                </span>
+                {d.disqualified ? (
+                  <span
+                    className="rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-300"
+                    title={t("race.disqualified")}
+                  >
+                    {t("race.statusQ")}
+                  </span>
+                ) : null}
               </div>
               {mode === "live" ? (
                 <>
