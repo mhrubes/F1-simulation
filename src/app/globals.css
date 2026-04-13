@@ -23,3 +23,41 @@ body {
 ::selection {
   background: rgba(220, 38, 38, 0.35);
 }
+
+/** Jemné „prosvícení“ tlačítka návratu na úvod po zavření výsledků (dostatečně pomalé, bez agresivního blikání). */
+@keyframes race-home-attention {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(220, 38, 38, 0.22),
+      0 0 14px -2px rgba(244, 244, 245, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  35% {
+    box-shadow:
+      0 0 18px 2px rgba(249, 115, 22, 0.32),
+      0 0 28px -6px rgba(249, 115, 22, 0.12);
+    border-color: rgba(251, 146, 60, 0.5);
+    background-color: rgba(251, 146, 60, 0.09);
+  }
+  70% {
+    box-shadow:
+      0 0 16px 2px rgba(234, 179, 8, 0.26),
+      0 0 24px -6px rgba(234, 179, 8, 0.1);
+    border-color: rgba(250, 204, 21, 0.48);
+    background-color: rgba(234, 179, 8, 0.08);
+  }
+}
+
+.race-home-attention {
+  animation: race-home-attention 2.75s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .race-home-attention {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.35);
+    border-color: rgba(251, 146, 60, 0.45);
+  }
+}

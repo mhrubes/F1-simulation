@@ -169,6 +169,14 @@ export function RaceScreen() {
     setRaceTimes(performance.now(), null);
   }, [setPhase, setRaceTimes]);
 
+  const handleResultsOpenChange = useCallback((open: boolean) => {
+    setResultsOpen(open);
+    if (open) return;
+    if (useRaceStore.getState().phase === "finished") {
+      useRaceStore.getState().setRaceHomeAttention(true);
+    }
+  }, []);
+
   const durationMs = phase === "finished" ? raceResultDurationMs : null;
 
   const top5 = useMemo(() => liveRacing.slice(0, 5), [liveRacing]);
@@ -421,7 +429,7 @@ export function RaceScreen() {
 
       <ResultsModal
         open={resultsOpen}
-        onOpenChange={setResultsOpen}
+        onOpenChange={handleResultsOpenChange}
         top={top5}
         durationMs={durationMs}
         onReset={() => {

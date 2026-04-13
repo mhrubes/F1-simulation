@@ -22,6 +22,8 @@ export type RaceStoreState = {
   trackedDriverIds: string[];
   /** 0–1 vizuální posun do depa po závodě */
   pitAnimation: number;
+  /** Po zavření výsledků na /race — jemně zvýraznit návrat na úvod (viz hlavička). */
+  raceHomeAttention: boolean;
 };
 
 type RaceStoreActions = {
@@ -35,6 +37,7 @@ type RaceStoreActions = {
   setDrivers: (d: RaceDriverState[]) => void;
   setRaceTimes: (startedAt: number | null, endedAt: number | null) => void;
   setPitAnimation: (v: number) => void;
+  setRaceHomeAttention: (v: boolean) => void;
 };
 
 const initial: RaceStoreState = {
@@ -49,6 +52,7 @@ const initial: RaceStoreState = {
   hoveredDriverId: null,
   trackedDriverIds: [],
   pitAnimation: 0,
+  raceHomeAttention: false,
 };
 
 export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => ({
@@ -86,6 +90,7 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
       hoveredDriverId: null,
       trackedDriverIds: [],
       pitAnimation: 0,
+      raceHomeAttention: false,
     });
   },
   reset: () => set({ ...initial }),
@@ -111,4 +116,5 @@ export const useRaceStore = create<RaceStoreState & RaceStoreActions>((set) => (
       ...(raceStartedAt != null && raceEndedAt == null ? { raceResultDurationMs: null } : {}),
     })),
   setPitAnimation: (pitAnimation) => set({ pitAnimation }),
+  setRaceHomeAttention: (raceHomeAttention) => set({ raceHomeAttention }),
 }));

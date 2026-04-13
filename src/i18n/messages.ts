@@ -6,6 +6,7 @@ const cs: MessageDict = {
   "app.title": "F1 Simulátor",
   "app.subtitle": "Real-time závodní simulace",
   "header.lang": "Jazyk",
+  "header.raceHomeExpand": "Zpět na úvodní stránku",
   "tracks.monza": "Itálie – rychlý okruh Monza",
   "tracks.spa": "Belgie – okruh v Ardenách (Spa)",
   "tracks.silverstone": "Velká Británie – okruh Silverstone",
@@ -82,6 +83,11 @@ const cs: MessageDict = {
   "race.timeScale": "Rychlost času",
   "race.timeScaleTooltip":
     "Zrychlí jen plynutí závodu (1×–10×, ne zobrazené km/h). Výsledky ukazují skutečnou délku závodu.",
+  "race.leaveTitle": "Opustit závod?",
+  "race.leaveBody":
+    "Přechod na úvodní stránku ukončí aktuální závod a vyresetuje celý jeho stav. Opravdu chcete pokračovat?",
+  "race.leaveCancel": "Zrušit",
+  "race.leaveConfirm": "Ano, na úvod",
   "results.title": "Výsledky závodu",
   "results.duration": "Délka závodu",
   "results.close": "Zavřít",
@@ -98,6 +104,7 @@ const en: MessageDict = {
   "app.title": "F1 Simulator",
   "app.subtitle": "Real-time race simulation",
   "header.lang": "Language",
+  "header.raceHomeExpand": "Back to the home page",
   "tracks.monza": "Italy – Monza high-speed circuit",
   "tracks.spa": "Belgium – Ardennes circuit (Spa)",
   "tracks.silverstone": "United Kingdom – Silverstone",
@@ -174,6 +181,11 @@ const en: MessageDict = {
   "race.timeScale": "Time speed",
   "race.timeScaleTooltip":
     "Speeds up the race clock only (1×–10×, not the km/h readout). Results show the true race duration.",
+  "race.leaveTitle": "Leave the race?",
+  "race.leaveBody":
+    "Going to the home page will end the current race and reset all progress. Do you want to continue?",
+  "race.leaveCancel": "Cancel",
+  "race.leaveConfirm": "Yes, go home",
   "results.title": "Race results",
   "results.duration": "Race duration",
   "results.close": "Close",
@@ -190,6 +202,7 @@ const sk: MessageDict = {
   "app.title": "F1 Simulátor",
   "app.subtitle": "Simulácia pretekov v reálnom čase",
   "header.lang": "Jazyk",
+  "header.raceHomeExpand": "Späť na úvodnú stránku",
   "tracks.monza": "Taliansko – rýchly okruh Monza",
   "tracks.spa": "Belgicko – okruh v Ardenách (Spa)",
   "tracks.silverstone": "Veľká Británia – okruh Silverstone",
@@ -266,6 +279,11 @@ const sk: MessageDict = {
   "race.timeScale": "Rýchlosť času",
   "race.timeScaleTooltip":
     "Zrýchli len plynutie pretekov (1×–10×, nie km/h). Výsledky ukážu skutočnú dĺžku pretekov.",
+  "race.leaveTitle": "Opustiť preteky?",
+  "race.leaveBody":
+    "Prechod na úvodnú stránku ukončí aktuálne preteky a vyresetuje celý ich stav. Naozaj chcete pokračovať?",
+  "race.leaveCancel": "Zrušiť",
+  "race.leaveConfirm": "Áno, na úvod",
   "results.title": "Výsledky pretekov",
   "results.duration": "Dĺžka pretekov",
   "results.close": "Zavrieť",
