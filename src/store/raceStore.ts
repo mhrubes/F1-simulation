@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { pickRandomDrivers, uniqueCarNumbers } from "@/data/drivers";
 import type { RaceDriverState, RacePhase } from "@/lib/types";
 
-export type RaceTimeScale = 1 | 2 | 3 | 5;
+export type RaceTimeScale = 1 | 2 | 3 | 5 | 10;
 
 export type RaceStoreState = {
   trackId: string | null;
@@ -13,7 +13,7 @@ export type RaceStoreState = {
   phase: RacePhase;
   raceStartedAt: number | null;
   raceEndedAt: number | null;
-  /** Násobič plynutí simulace během závodu (1×–5×); neovlivní km/h jako „rychlost auta“. */
+  /** Násobič plynutí simulace během závodu (1×–5×, nad 30 kol i 10×); neovlivní km/h jako „rychlost auta“. */
   raceTimeScale: RaceTimeScale;
   /** Délka závodu pro výsledky (ms), doplní se v cíli: Σ min(Δt_wall,50 ms)×násobič — odpovídá 1× „závodnímu“ času. */
   raceResultDurationMs: number | null;

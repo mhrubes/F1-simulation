@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import { runFrameLoop } from "@/lib/runFrameLoop";
 import { sortLive, sortStatic } from "@/lib/racePhysics";
 import type { RaceDriverState } from "@/lib/types";
-import { useRaceStore } from "@/store/raceStore";
+import { useRaceStore, type RaceTimeScale } from "@/store/raceStore";
 import { ResultsModal } from "./ResultsModal";
 import { TrackCircuit } from "./TrackCircuit";
 import { TrafficLights } from "./TrafficLights";
@@ -58,6 +58,16 @@ export function RaceScreen() {
   const toggleTrackedDriver = useRaceStore((s) => s.toggleTrackedDriver);
   const raceTimeScale = useRaceStore((s) => s.raceTimeScale);
   const setRaceTimeScale = useRaceStore((s) => s.setRaceTimeScale);
+
+  const timeScaleOptions: RaceTimeScale[] = useMemo(
+    () => (totalLaps >= 30 ? [1, 2, 3, 5, 10] : [1, 2, 3, 5]),
+    [totalLaps],
+  );
+
+  useEffect(() => {
+    if (totalLaps >= 30) return;
+    if (raceTimeScale === 10) setRaceTimeScale(1);
+  }, [totalLaps, raceTimeScale, setRaceTimeScale]);
   const raceResultDurationMs = useRaceStore((s) => s.raceResultDurationMs);
 
   const [tab, setTab] = useState<"static" | "live">("static");
@@ -186,7 +196,7 @@ export function RaceScreen() {
                     {t("race.timeScale")}
                   </span>
                   <div className="flex gap-0.5" role="group" aria-label={t("race.timeScale")}>
-                    {([1, 2, 3, 5] as const).map((s) => (
+                    {timeScaleOptions.map((s) => (
                       <button
                         key={s}
                         type="button"

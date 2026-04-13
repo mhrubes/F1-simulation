@@ -81,7 +81,7 @@ const cs: MessageDict = {
   "race.statusQ": "Q",
   "race.timeScale": "Rychlost času",
   "race.timeScaleTooltip":
-    "Zrychlí jen plynutí závodu (1×–5×, ne zobrazené km/h). Výsledky ukazují skutečnou délku závodu.",
+    "Zrychlí jen plynutí závodu (1×–10×, ne zobrazené km/h). Výsledky ukazují skutečnou délku závodu.",
   "results.title": "Výsledky závodu",
   "results.duration": "Délka závodu",
   "results.close": "Zavřít",
@@ -173,7 +173,7 @@ const en: MessageDict = {
   "race.statusQ": "Q",
   "race.timeScale": "Time speed",
   "race.timeScaleTooltip":
-    "Speeds up the race clock only (1×–5×, not the km/h readout). Results show the true race duration.",
+    "Speeds up the race clock only (1×–10×, not the km/h readout). Results show the true race duration.",
   "results.title": "Race results",
   "results.duration": "Race duration",
   "results.close": "Close",
@@ -265,7 +265,7 @@ const sk: MessageDict = {
   "race.statusQ": "Q",
   "race.timeScale": "Rýchlosť času",
   "race.timeScaleTooltip":
-    "Zrýchli len plynutie pretekov (1×–5×, nie km/h). Výsledky ukážu skutočnú dĺžku pretekov.",
+    "Zrýchli len plynutie pretekov (1×–10×, nie km/h). Výsledky ukážu skutočnú dĺžku pretekov.",
   "results.title": "Výsledky pretekov",
   "results.duration": "Dĺžka pretekov",
   "results.close": "Zavrieť",
