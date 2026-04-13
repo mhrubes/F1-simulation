@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { DRIVERS } from "@/data/drivers";
 import { getTrack, TRACKS } from "@/data/tracks";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLapTime } from "@/i18n/messages";
@@ -38,7 +39,9 @@ export function HomeClient() {
     });
   }, [track]);
 
-  const canContinue = Boolean(trackId) && laps >= 1 && drivers >= 1 && drivers <= 20;
+  const maxDrivers = DRIVERS.length;
+  const canContinue =
+    Boolean(trackId) && laps >= 1 && drivers >= 1 && drivers <= maxDrivers;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-64px)] max-w-xl flex-col items-center justify-center gap-8 px-4 py-12 text-center">
@@ -105,10 +108,12 @@ export function HomeClient() {
           <input
             type="number"
             min={1}
-            max={20}
+            max={maxDrivers}
             value={drivers}
             onChange={(e) =>
-              setDrivers(Math.min(20, Math.max(1, Number(e.target.value) || 1)))
+              setDrivers(
+                Math.min(maxDrivers, Math.max(1, Number(e.target.value) || 1)),
+              )
             }
             className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 font-mono text-sm text-zinc-100 outline-none focus:border-red-500/60"
           />
